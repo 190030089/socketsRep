@@ -8,6 +8,10 @@ app.use(
       origin: ["https://peer-js-meets.vercel.app/", "http://localhost:3001"],
     })
 );
+
+const port = normalizePort(process.env.PORT || '3000');
+
+
 const server=http.createServer(app)
 const io=new sock.Server(server,{
      cors: {
@@ -43,6 +47,6 @@ app.get("/",(req,res)=>{
     res.send("Hi")
 })
 
-server.listen(1230,(err)=>{
+server.listen(port,(err)=>{
     console.log("listening")
 })
