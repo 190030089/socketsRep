@@ -1,89 +1,48 @@
-require('dotenv').config();
+const http=require("http")
+const express=require("express")
+const sock=require("socket.io")
+const cors = require("cors"); 
+const app=express()
+app.use(
+    cors({
+      origin: ["https://peer-js-meets.vercel.app/", "http://localhost:3001"],
+    })
+);
+const server=http.createServer(app)
+const io=new sock.Server(server,{
+     cors: {
+                origin: "*"
+        },
+    methods: ["GET", "POST"],
+                credentials: true,
+                transports: ['websocket', 'polling'],
+        allowEIO3: true
+        
+})
 
-/**
- * Module dependencies.
- */
 
-const app = require('./app');
-const http = require('http');
 
-/**
- * Get port from environment and store in Express.
- */
+io.on("connection",(soc)=>{
 
-const port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
+    
 
-/**
- * Create HTTP server.
- */
+    soc.on("join",(data)=>{
+        soc.join(data.roomid)
+        
+        io.in(data.roomid).allSockets().then(result=>{
+            io.to(data.roomid).emit("userJoined",{data:data.peerid,result:result.size})
+            console.log(result.size) })
+    })
+    soc.on("msg",(data)=>{
+        io.to(data.roomid).emit("data",data)
+    })
+})
 
-const server = http.createServer(app);
+app.get("/",(req,res)=>{
+  
+    res.send("Hi")
+})
 
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
-
-/**
- * Normalize a port into a number, string, or false.
- */
-
-function normalizePort(val) {
-  const port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
-
-/**
- * Event listener for HTTP server "error" event.
- */
-
-function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-/**
- * Event listener for HTTP server "listening" event.
- */
-
-function onListening() {
-  const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  console.log('App started. Listening on ' + bind);
-}
+server.listen(1230,(err)=>{
+    console.log("listening")
+})
